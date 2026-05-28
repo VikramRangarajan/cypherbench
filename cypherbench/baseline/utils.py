@@ -41,7 +41,15 @@ LANGCHAIN_LLM_NAME_MAPPING = {
 }
 
 
-def get_langchain_llm(llm_name: str, temperature: float):
+def get_langchain_llm(llm_name: str, temperature: float, api_base: str | None = None, api_key: str | None = None):
+    if api_base:
+        return ChatOpenAI(
+            model_name=llm_name,
+            temperature=temperature,
+            openai_api_base=api_base,
+            openai_api_key=api_key,
+        )
+
     if llm_name.startswith('gpt'):
         return ChatOpenAI(model_name=llm_name, temperature=temperature)
 
