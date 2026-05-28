@@ -65,6 +65,8 @@ def main():
     parser.add_argument('--num_threads', type=int, default=8)
     parser.add_argument('--metrics', nargs='+', default=['execution_accuracy', 'psjs', 'executable'])
     parser.add_argument('--metric_for_agg', default='execution_accuracy')
+    parser.add_argument('--graph', default=None, nargs='+',
+                        help='Only evaluate tasks for these graph(s). If omitted, uses all test domains.')
     args = parser.parse_args()
     print(args)
     print()
@@ -75,8 +77,15 @@ def main():
     with open(args.neo4j_info) as fin:
         neo4j_info = json.load(fin)
 
-    graph2conn = {graph: Neo4jConnector(name=graph, **neo4j_info['full'][graph])
-                  for graph in neo4j_info['test_domains']}
+    graphs = args.graph if args.graph else neo4j_info['test_domains']
+
+    graph2conn = {}
+    for graph in graphs:
+        info = neo4j_info['full'][graph]
+        graph2conn[graph] = Neo4jConnector(name=graph, **info)
+
+    result = [item for item in result if item.graph in graphs]
+    print(f'Evaluating {len(result)} tasks across graphs: {graphs}')
 
     # Use ThreadPoolExecutor for multithreading
     result_with_metrics = []
@@ -97,12 +106,17 @@ def main():
          for item in result_with_metrics if item.from_template.return_pattern_id in RETURN_PATTERN_MAPPING]
     )
 
-    output_path = os.path.join(args.result_dir, f'result_with_metrics.json')
+    if args.graph and len(args.graph) == 1:
+        suffix = f'_{args.graph[0]}'
+    else:
+        suffix = ''
+
+    output_path = os.path.join(args.result_dir, f'result_with_metrics{suffix}.json')
     with open(output_path, 'w') as fout:
         json.dump([item.model_dump(mode='json') for item in result_with_metrics], fout, indent=2)
     print(f'Saved result with metrics to {output_path}')
 
-    output_path = os.path.join(args.result_dir, f'aggregated_metrics.json')
+    output_path = os.path.join(args.result_dir, f'aggregated_metrics{suffix}.json')
     with open(output_path, 'w') as fout:
         json.dump(aggregated, fout, indent=2)
     print(f'Saved aggregated metrics to {output_path}')
