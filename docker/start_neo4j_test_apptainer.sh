@@ -88,12 +88,14 @@ for entry in "${graphs[@]}"; do
     graph_json="$BENCHMARK_DIR/graphs/simplekg/${graph}_simplekg.json"
     echo "  Starting $instance on port $port..."
 
+    # Use host networking (Apptainer default; --net not available for non-root users).
+    # Each instance is configured to listen on its unique bolt port via env var.
     $APPTAINER instance start \
         --bind "$graph_json:/init/graph.json" \
         --env "NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD" \
         --env "NEO4J_server_http__enabled__modules=TRANSACTIONAL_ENDPOINTS,UNMANAGED_EXTENSIONS,ENTERPRISE_MANAGEMENT_ENDPOINTS" \
         --env "NEO4J_PLUGINS=[\"apoc\",\"graph-data-science\"]" \
-        --net --network-args "portmap=$port:7687/tcp" \
+        --env "NEO4J_dbms_connector_bolt_listen__address=:$port" \
         "$SIF_PATH" \
         "$instance" || {
         echo "  ERROR: Failed to start $instance"
