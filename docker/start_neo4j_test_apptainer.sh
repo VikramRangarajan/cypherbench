@@ -95,7 +95,8 @@ for entry in "${graphs[@]}"; do
         --env "NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD" \
         --env "NEO4J_server_http__enabled__modules=TRANSACTIONAL_ENDPOINTS,UNMANAGED_EXTENSIONS,ENTERPRISE_MANAGEMENT_ENDPOINTS" \
         --env "NEO4J_PLUGINS=[\"apoc\",\"graph-data-science\"]" \
-        --env "NEO4J_dbms_connector_bolt_listen__address=:$port" \
+        --env "NEO4J_server_bolt_listen__address=:$port" \
+        --env "NEO4J_server_bolt_advertised__address=:$port" \
         "$SIF_PATH" \
         "$instance" || {
         echo "  ERROR: Failed to start $instance"
