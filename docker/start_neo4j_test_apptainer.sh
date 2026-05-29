@@ -93,7 +93,7 @@ for entry in "${graphs[@]}"; do
         --env "NEO4J_AUTH=$NEO4J_USERNAME/$NEO4J_PASSWORD" \
         --env "NEO4J_server_http__enabled__modules=TRANSACTIONAL_ENDPOINTS,UNMANAGED_EXTENSIONS,ENTERPRISE_MANAGEMENT_ENDPOINTS" \
         --env "NEO4J_PLUGINS=[\"apoc\",\"graph-data-science\"]" \
-        --publish "127.0.0.1:$port:7687" \
+        --net --network-args "portmap=$port:7687/tcp" \
         "$SIF_PATH" \
         "$instance" || {
         echo "  ERROR: Failed to start $instance"
