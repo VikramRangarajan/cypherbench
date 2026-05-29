@@ -66,6 +66,8 @@ def main():
     parser.add_argument('--overwrite', action='store_true')
     parser.add_argument('--api_base', default=None, help='Base URL for an OpenAI-compatible API (e.g. a vLLM server).')
     parser.add_argument('--api_key', default=None, help='API key for the OpenAI-compatible API.')
+    parser.add_argument('--model_type', default='chat', choices=['chat', 'completion'],
+                        help='Use chat (default, for instruct models) or completion (for base models) endpoint.')
     parser.add_argument('--debug', action='store_true')
     args = parser.parse_args()
     print(args)
@@ -90,7 +92,8 @@ def main():
     with open(args.neo4j_info) as fin:
         neo4j_info = json.load(fin)
 
-    llm = get_langchain_llm(args.llm, temperature=0.0, api_base=args.api_base, api_key=args.api_key)
+    llm = get_langchain_llm(args.llm, temperature=0.0, api_base=args.api_base, api_key=args.api_key,
+                            model_type=args.model_type)
     chain = llm.bind(stop='\n```') | StrOutputParser()
 
     if args.load_schema_from == 'neo4j':
