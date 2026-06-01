@@ -1,6 +1,5 @@
 #!/bin/bash
-# Stop all test Neo4j Apptainer instances.
-# Apptainer-only equivalent of stop_neo4j_test.sh.
+# Stop all sampled Neo4j Apptainer instances.
 
 APPTAINER=$(command -v apptainer || command -v singularity)
 if [ -z "$APPTAINER" ]; then
@@ -9,6 +8,8 @@ if [ -z "$APPTAINER" ]; then
 fi
 
 declare -a graphs=(
+    "art"
+    "biology"
     "company"
     "fictional_character"
     "flight_accident"
@@ -16,11 +17,13 @@ declare -a graphs=(
     "movie"
     "nba"
     "politics"
+    "soccer"
+    "terrorist_attack"
 )
 
 echo "Stopping Neo4j instances..."
 for graph in "${graphs[@]}"; do
-    instance="cypherbench-${graph//_/-}"
+    instance="cypherbench-${graph//_/-}-sampled"
     if $APPTAINER instance list 2>/dev/null | grep -q "$instance"; then
         echo "  Stopping $instance..."
         $APPTAINER instance stop "$instance" 2>/dev/null || true

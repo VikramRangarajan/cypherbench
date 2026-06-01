@@ -1,9 +1,8 @@
 #!/bin/bash
-# Start all test Neo4j graphs as Apptainer instances.
-# Apptainer-only equivalent of start_neo4j_test.sh.
+# Start all train Neo4j graphs as Apptainer instances.
 #
 # Usage:
-#   bash docker/start_neo4j_test_apptainer.sh [--sif_path path] [--rebuild-sif]
+#   bash docker/start_neo4j_train_apptainer.sh [--sif_path path] [--rebuild-sif]
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -34,13 +33,10 @@ if [ ! -d "$BENCHMARK_DIR" ]; then
 fi
 
 declare -a graphs=(
-    "company:15062"
-    "fictional_character:15063"
-    "flight_accident:15064"
-    "geography:15065"
-    "movie:15066"
-    "nba:15067"
-    "politics:15068"
+    "art:15060"
+    "biology:15061"
+    "soccer:15069"
+    "terrorist_attack:15070"
 )
 
 missing_files=false
@@ -101,7 +97,6 @@ for entry in "${graphs[@]}"; do
 
     http_port=$((port + 1000))
 
-    # Create writable host directories for Neo4j data, logs, run, plugins
     inst_dir="$INSTANCE_DIR/$instance"
     mkdir -p "$inst_dir"/{data,logs,run,plugins}
 

@@ -56,9 +56,14 @@ git lfs install
 git clone https://huggingface.co/datasets/megagonlabs/cypherbench benchmark
 ```
 
-### 3. Deploy the graphs using Docker
+### 3. Deploy the graphs using Docker or Apptainer
 
-⚠️ Deploying the graphs requires significant memory. We recommend using a machine with at least 64GB of RAM when deploying the 7 test graphs and 128GB when deploying all 11 graphs. Additionally, ensure that Docker is installed ([Docker installation instructions](https://docs.docker.com/engine/install/)) before proceeding.
+⚠️ Deploying the graphs requires significant memory. We recommend using a machine with at least 64GB of RAM when deploying the 7 test graphs and 128GB when deploying all 11 graphs.
+
+<details>
+<summary><b>Using Docker</b> (click to expand)</summary>
+
+Ensure that Docker is installed ([Docker installation instructions](https://docs.docker.com/engine/install/)) before proceeding.
 
 Now, you can deploy the 7 test graphs with a single Docker Compose command using our [custom Neo4j Docker image](https://hub.docker.com/repository/docker/megagonlabs/neo4j-with-loader/general) and our [Docker Compose configuration](docker/docker-compose-test.yml):
 
@@ -72,6 +77,46 @@ python scripts/print_db_status.py
 ```
 
 To stop the Neo4j databases, run `bash stop_neo4j_test.sh`.
+
+</details>
+
+<details>
+<summary><b>Using Apptainer</b> (click to expand)</summary>
+
+Ensure Apptainer (or Singularity) is installed. If Docker is not available (e.g., on SLURM/HPC clusters), use the Apptainer workflow.
+
+First, build the SIF image from the [Apptainer definition file](docker/neo4j-with-loader/neo4j-with-loader.def):
+
+```bash
+cd docker/
+bash start_neo4j_test_apptainer.sh  # Builds SIF on first run, then starts all test graph instances
+cd ..
+
+# check if the graphs are fully loaded (it typically takes at least 10 minutes).
+python scripts/print_db_status.py
+```
+
+The SIF is cached at `.cache/sif/neo4j-with-loader.sif`. Use `--rebuild-sif` to force a rebuild:
+
+```bash
+bash docker/start_neo4j_test_apptainer.sh --rebuild-sif
+```
+
+To stop the Neo4j instances, run `bash docker/stop_neo4j_test_apptainer.sh`.
+
+To deploy train or sampled graphs with Apptainer:
+
+```bash
+# Train graphs (4 graphs, ports 15060-15070)
+bash docker/start_neo4j_train_apptainer.sh
+bash docker/stop_neo4j_train_apptainer.sh
+
+# Sampled graphs (11 graphs, ports 15080-15090)
+bash docker/start_neo4j_sampled_apptainer.sh
+bash docker/stop_neo4j_sampled_apptainer.sh
+```
+
+</details>
 
 ### 4. Run `gpt-4o-mini` on CypherBench
 
@@ -139,7 +184,10 @@ At this point, the property graph is saved in the [WikidataKG](cypherbench/wd2ne
 python -m cypherbench.wd2neo4j.wd2simplekg --input_path output/nba_mini/nba_mini-graph.json --output_path output/nba_mini/nba_mini-graph_simplekg.json
 ```
 
-The property graph can now be deployed using our custom Neo4j Docker image:
+The property graph can now be deployed using our custom Neo4j image:
+
+<details>
+<summary><b>Using Docker</b></summary>
 
 ```bash
 docker run -d \
@@ -152,6 +200,34 @@ docker run -d \
   megagonlabs/neo4j-with-loader:2.4
 ```
 
+</details>
+
+<details>
+<summary><b>Using Apptainer</b></summary>
+
+First, build the SIF image from the [definition file](docker/neo4j-with-loader/neo4j-with-loader.def):
+
+```bash
+apptainer build neo4j-with-loader.sif docker/neo4j-with-loader/neo4j-with-loader.def
+```
+
+Then run the container:
+
+```bash
+apptainer instance start \
+  --bind $(pwd)/output/nba_mini/nba_mini-graph_simplekg.json:/init/graph.json \
+  --env NEO4J_AUTH="neo4j/cypherbench" \
+  --env NEO4J_PLUGINS='["apoc","graph-data-science"]' \
+  --env NEO4J_server_bolt_listen__address=:15095 \
+  --env NEO4J_server_bolt_advertised__address=:15095 \
+  neo4j-with-loader.sif \
+  cypherbench-nba-mini
+```
+
+To stop: `apptainer instance stop cypherbench-nba-mini`
+
+</details>
+
 ## 🏭 Text-to-Cypher Task Generation Pipeline
 
 We also open-source the text-to-cypher task generation pipeline in the [`cypherbench.taskgen`](cypherbench/taskgen) package. You can generate as many text-to-cypher tasks as you want for your own Neo4j graphs! Simply pass in the Neo4j graph endpoint (host + port) to the [task generator](cypherbench/taskgen/generate_benchmark.py#L131). You can also create your own templates.
@@ -159,6 +235,9 @@ We also open-source the text-to-cypher task generation pipeline in the [`cypherb
 ### Reproducing CypherBench
 
 For the CypherBench graphs, the task generation pipeline requires a set of sampled subgraphs of the original full-scale graphs for efficient template instantiation. The graphs are already uploaded to the HuggingFace repo (if you have previously cloned the repo, run a `git pull` under `benchmark/`, otherwise, follow the instructions in the [Download the dataset](#2-download-the-dataset) section) and can be deployed using the following commands:
+
+<details>
+<summary><b>Using Docker</b></summary>
 
 ```
 cd docker/
@@ -168,6 +247,22 @@ cd ..
 # check if the graphs are fully loaded
 python scripts/print_db_sampled_status.py
 ```
+
+</details>
+
+<details>
+<summary><b>Using Apptainer</b></summary>
+
+```
+cd docker/
+bash start_neo4j_sampled_apptainer.sh
+cd ..
+
+# check if the graphs are fully loaded
+python scripts/print_db_sampled_status.py
+```
+
+</details>
 
 After the graphs have been fully loaded, you can run the task generation pipeline by:
 

@@ -1,6 +1,5 @@
 #!/bin/bash
-# Stop all test Neo4j Apptainer instances.
-# Apptainer-only equivalent of stop_neo4j_test.sh.
+# Stop all train Neo4j Apptainer instances.
 
 APPTAINER=$(command -v apptainer || command -v singularity)
 if [ -z "$APPTAINER" ]; then
@@ -9,13 +8,10 @@ if [ -z "$APPTAINER" ]; then
 fi
 
 declare -a graphs=(
-    "company"
-    "fictional_character"
-    "flight_accident"
-    "geography"
-    "movie"
-    "nba"
-    "politics"
+    "art"
+    "biology"
+    "soccer"
+    "terrorist_attack"
 )
 
 echo "Stopping Neo4j instances..."

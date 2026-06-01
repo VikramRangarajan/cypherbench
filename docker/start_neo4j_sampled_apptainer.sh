@@ -1,9 +1,8 @@
 #!/bin/bash
-# Start all test Neo4j graphs as Apptainer instances.
-# Apptainer-only equivalent of start_neo4j_test.sh.
+# Start all sampled Neo4j graphs as Apptainer instances.
 #
 # Usage:
-#   bash docker/start_neo4j_test_apptainer.sh [--sif_path path] [--rebuild-sif]
+#   bash docker/start_neo4j_sampled_apptainer.sh [--sif_path path] [--rebuild-sif]
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -34,19 +33,23 @@ if [ ! -d "$BENCHMARK_DIR" ]; then
 fi
 
 declare -a graphs=(
-    "company:15062"
-    "fictional_character:15063"
-    "flight_accident:15064"
-    "geography:15065"
-    "movie:15066"
-    "nba:15067"
-    "politics:15068"
+    "art:15080"
+    "biology:15081"
+    "company:15082"
+    "fictional_character:15083"
+    "flight_accident:15084"
+    "geography:15085"
+    "movie:15086"
+    "nba:15087"
+    "politics:15088"
+    "soccer:15089"
+    "terrorist_attack:15090"
 )
 
 missing_files=false
 for entry in "${graphs[@]}"; do
     graph="${entry%%:*}"
-    graph_path="$BENCHMARK_DIR/graphs/simplekg/${graph}_simplekg.json"
+    graph_path="$BENCHMARK_DIR/graphs/simplekg_sampled/${graph}_sampled_simplekg.json"
     if [ ! -f "$graph_path" ]; then
         echo "Error: Missing graph file $graph_path"
         missing_files=true
@@ -89,19 +92,18 @@ echo "Starting Neo4j instances with $APPTAINER..."
 for entry in "${graphs[@]}"; do
     graph="${entry%%:*}"
     port="${entry##*:}"
-    instance="cypherbench-${graph//_/-}"
+    instance="cypherbench-${graph//_/-}-sampled"
 
     if $APPTAINER instance list 2>/dev/null | grep -q "$instance"; then
         echo "  [SKIP] $instance already running"
         continue
     fi
 
-    graph_json="$BENCHMARK_DIR/graphs/simplekg/${graph}_simplekg.json"
+    graph_json="$BENCHMARK_DIR/graphs/simplekg_sampled/${graph}_sampled_simplekg.json"
     echo "  Starting $instance on port $port..."
 
     http_port=$((port + 1000))
 
-    # Create writable host directories for Neo4j data, logs, run, plugins
     inst_dir="$INSTANCE_DIR/$instance"
     mkdir -p "$inst_dir"/{data,logs,run,plugins}
 

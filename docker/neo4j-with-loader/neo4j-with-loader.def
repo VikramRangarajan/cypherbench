@@ -1,0 +1,82 @@
+Bootstrap: docker
+From: ubuntu:22.04
+
+%files
+    scripts/entrypoint.sh /opt/neo4j-loader/entrypoint.sh
+    scripts/loader.py      /opt/neo4j-loader/loader.py
+    scripts/schema.py      /opt/neo4j-loader/schema.py
+    requirements.txt       /opt/neo4j-loader/requirements.txt
+
+%post
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get update && apt-get install -y --no-install-recommends \
+        openjdk-17-jre-headless \
+        curl \
+        jq \
+        python3 \
+        python3-pip \
+        netcat-openbsd \
+        gnupg \
+        apt-transport-https \
+        ca-certificates \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+    # Add Neo4j apt repository and install Neo4j 5.20.0
+    mkdir -p /usr/share/keyrings
+    curl -fsSL https://debian.neo4j.com/neotechnology.gpg.key | gpg --dearmor -o /usr/share/keyrings/neo4j.gpg
+    echo "deb [signed-by=/usr/share/keyrings/neo4j.gpg] https://debian.neo4j.com stable 5" > /etc/apt/sources.list.d/neo4j.list
+    apt-get update && apt-get install -y --no-install-recommends \
+        neo4j=1:5.20.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+    # Upgrade pip and install Python dependencies
+    python3 -m pip install --no-cache-dir --upgrade pip
+    python3 -m pip install --no-cache-dir -r /opt/neo4j-loader/requirements.txt
+
+    chmod +x /opt/neo4j-loader/entrypoint.sh
+    mkdir -p /init
+
+    # Make Neo4j directories world-writable so any UID can run Neo4j
+    for d in /var/lib/neo4j /var/log/neo4j /var/run/neo4j /etc/neo4j; do
+        chmod -R 777 "$d" 2>/dev/null || true
+    done
+
+%runscript
+    exec /opt/neo4j-loader/entrypoint.sh "$@"
+
+%startscript
+    exec /opt/neo4j-loader/entrypoint.sh "$@"
+
+%labels
+    Author CypherBench
+    Version 1.1.0
+    Description Neo4j 5.20 with Python loader for CypherBench (Ubuntu-based)
+
+%help
+    Apptainer image for CypherBench Neo4j loader.
+
+    Build:
+      apptainer build neo4j-with-loader.sif neo4j-with-loader.def
+
+    Run (foreground):
+      apptainer run \
+          --bind /path/to/graph.json:/init/graph.json \
+          --env NEO4J_AUTH=neo4j/password \
+          --env NEO4J_PLUGINS='["apoc","graph-data-science"]' \
+          neo4j-with-loader.sif
+
+    Run (instance, background):
+      apptainer instance start \
+          --bind /path/to/graph.json:/init/graph.json \
+          --env NEO4J_AUTH=neo4j/password \
+          --env NEO4J_server_bolt_listen__address=:7687 \
+          --env NEO4J_server_bolt_advertised__address=:7687 \
+          --env NEO4J_PLUGINS='["apoc","graph-data-science"]' \
+          neo4j-with-loader.sif \
+          my-instance
+
+    Stop instance:
+      apptainer instance stop my-instance
+
+    Environment variables are the same as the official Neo4j Docker image.
