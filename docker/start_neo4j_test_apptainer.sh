@@ -15,9 +15,11 @@ if [ -z "$APPTAINER" ]; then
 fi
 
 SIF_PATH=""
+REBUILD_SIF=false
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --sif_path) SIF_PATH="$2"; shift 2 ;;
+        --rebuild-sif) REBUILD_SIF=true ;;
         *) echo "Unknown argument: $1"; exit 1 ;;
     esac
 done
@@ -54,18 +56,28 @@ if [ "$missing_files" = true ]; then
     exit 1
 fi
 
-IMAGE="docker://megagonlabs/neo4j-with-loader:2.4"
+# Uses the local neo4j-with-loader:local Docker image (build with:
+#   docker build -t neo4j-with-loader:local docker/neo4j-with-loader/
+# )
+# To use the upstream megagonlabs image instead, change to:
+#   IMAGE="docker://megagonlabs/neo4j-with-loader:2.4"
+IMAGE="docker-daemon://neo4j-with-loader:local"
 SIF_CACHE_DIR="$PROJECT_DIR/.cache/sif"
-CACHED_SIF="$SIF_CACHE_DIR/neo4j-with-loader_2.4.sif"
+CACHED_SIF="$SIF_CACHE_DIR/neo4j-with-loader_local.sif"
 
 if [ -z "$SIF_PATH" ]; then
-    if [ -f "$CACHED_SIF" ]; then
+    if [ -f "$CACHED_SIF" ] && [ "$REBUILD_SIF" = false ]; then
         SIF_PATH="$CACHED_SIF"
     else
-        echo "Pulling SIF image (one-time cache)..."
+        if [ "$REBUILD_SIF" = true ]; then
+            echo "Rebuilding SIF from local Docker image..."
+            rm -f "$CACHED_SIF"
+        else
+            echo "Building SIF from local Docker image (one-time cache)..."
+        fi
         mkdir -p "$SIF_CACHE_DIR"
-        $APPTAINER pull "$CACHED_SIF" "$IMAGE" || {
-            echo "WARNING: SIF pull failed, falling back to docker:// URI"
+        $APPTAINER build "$CACHED_SIF" "$IMAGE" || {
+            echo "WARNING: SIF build failed, falling back to docker-daemon:// URI"
             SIF_PATH="$IMAGE"
         }
         if [ -z "$SIF_PATH" ]; then
