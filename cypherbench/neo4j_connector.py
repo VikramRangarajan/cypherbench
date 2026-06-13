@@ -1,4 +1,4 @@
-from neo4j import GraphDatabase, Query
+from neo4j import GraphDatabase, Query, READ_ACCESS
 from typing import Literal
 import time
 from cypherbench.schema import *
@@ -70,7 +70,7 @@ class Neo4jConnector:
             t0 = time.time()
             print(f'Running Cypher:\n```\n{cypher}\n```')
 
-        with self.driver.session(database=self.database) as session:
+        with self.driver.session(database=self.database, default_access_mode=READ_ACCESS) as session:
             query = Query(cypher, timeout=timeout)
             result = session.run(query, **kwargs)
             if convert_func == 'data':
