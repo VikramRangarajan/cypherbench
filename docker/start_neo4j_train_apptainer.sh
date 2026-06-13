@@ -6,6 +6,10 @@
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [[ ! -n "$INSTANCE_DIR" ]]; then
+    echo "INSTANCE_DIR does not exist"
+    exit 1
+fi
 
 APPTAINER=$(command -v apptainer || command -v singularity)
 if [ -z "$APPTAINER" ]; then
@@ -79,7 +83,7 @@ if [ -z "$SIF_PATH" ]; then
     fi
 fi
 
-INSTANCE_DIR="$PROJECT_DIR/.cache/neo4j-instances"
+# INSTANCE_DIR="$PROJECT_DIR/.cache/neo4j-instances"
 
 echo "Starting Neo4j instances with $APPTAINER..."
 for entry in "${graphs[@]}"; do

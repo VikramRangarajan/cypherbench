@@ -108,7 +108,7 @@ To deploy train or sampled graphs with Apptainer:
 
 ```bash
 # Train graphs (4 graphs, ports 15060-15070)
-bash docker/start_neo4j_train_apptainer.sh
+INSTANCE_DIR=your_instance_dir bash docker/start_neo4j_train_apptainer.sh
 bash docker/stop_neo4j_train_apptainer.sh
 
 # Sampled graphs (11 graphs, ports 15080-15090)
