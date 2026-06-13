@@ -1,0 +1,40 @@
+[project]
+name = "cypherbench"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "langchain",
+    "langchain-community",
+    "langchain-core",
+    "langchain-fireworks",
+    "langchain-google-vertexai",
+    "langchain-groq",
+    "langchain-openai",
+    "langchain-text-splitters",
+    "langchain-together",
+    "neo4j",
+    "pint",
+    "pydantic",
+    "requests",
+    "tabulate",
+    "tqdm",
+]
+
+[build-system]
+requires = ["uv_build>=0.11.21,<0.12"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "cypherbench"
+module-root = ""
+
+[tool.pyrefly]
+project-includes = [
+    "**/*.py*",
+    "**/*.ipynb",
+]
+project-excludes = [
+    "docker"
+]
