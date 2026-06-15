@@ -11,6 +11,10 @@ import neo4j.graph
 from pydantic import BaseModel
 from typing import List, Tuple, Dict, Set, Optional, Any, Literal
 from cypherbench.neo4j_connector import Neo4jConnector
+from diskcache import Cache
+from pathlib import Path
+
+query_cache = Cache(Path(__file__).parent.parent.parent / "benchmark" / "psjs_cache")
 
 logger = logging.getLogger(__name__)
 
@@ -223,7 +227,11 @@ def provenance_subgraph_jaccard_similarity(pred_cypher: str,
     # logger.debug(f'PSJS cypher: {psjs_cypher}')
 
     try:
-        result = neo4j_connector.run_query(target_ps_cypher, timeout=None)
+        if target_ps_cypher not in query_cache:
+            result = neo4j_connector.run_query(target_ps_cypher)
+            query_cache[target_ps_cypher] = result
+        else:
+            result = query_cache[target_ps_cypher]
         target_ps = set(record['elemId1'] for record in result)
         result = neo4j_connector.run_query(pred_ps_cypher, timeout=timeout)
         pred_ps = set(record['elemId2'] for record in result)

@@ -14,7 +14,10 @@ import neo4j
 from typing import List, Tuple, Dict, Set
 from typing import Literal
 from cypherbench.neo4j_connector import Neo4jConnector
+from diskcache import Cache
+from pathlib import Path
 
+query_cache = Cache(Path(__file__).parent.parent.parent / "benchmark" / "ex_acc_cache")
 
 def to_hashable(obj, unorder_list=True):
     """
@@ -57,7 +60,11 @@ def execution_accuracy(pred_cypher: str,
     if pred_cypher == target_cypher:
         return 1.0
     t0 = time.time()
-    target_executed = neo4j_connector.run_query(target_cypher)
+    if target_cypher not in query_cache:
+        target_executed = neo4j_connector.run_query(target_cypher)
+        query_cache[target_cypher] = target_executed
+    else:
+        target_executed = query_cache[target_cypher]
     target_seconds = time.time() - t0
     if target_seconds > timeout:
         print(f"Warning: Execution of target cypher query {target_cypher} took longer than {timeout} seconds")

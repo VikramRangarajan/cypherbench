@@ -83,7 +83,7 @@ if [ -z "$SIF_PATH" ]; then
     fi
 fi
 
-INSTANCE_DIR="$PROJECT_DIR/.cache/neo4j-instances"
+# INSTANCE_DIR="$PROJECT_DIR/.cache/neo4j-instances"
 
 echo "Starting Neo4j instances with $APPTAINER..."
 for entry in "${graphs[@]}"; do
