@@ -226,12 +226,12 @@ def provenance_subgraph_jaccard_similarity(pred_cypher: str,
     #               'RETURN CASE WHEN U = 0 THEN 0.0 ELSE 1.0 * I / U END as PSJS'
     # logger.debug(f'PSJS cypher: {psjs_cypher}')
 
+    if target_ps_cypher not in query_cache:
+        result = neo4j_connector.run_query(target_ps_cypher)
+        query_cache[target_ps_cypher] = result
+    else:
+        result = query_cache[target_ps_cypher]
     try:
-        if target_ps_cypher not in query_cache:
-            result = neo4j_connector.run_query(target_ps_cypher)
-            query_cache[target_ps_cypher] = result
-        else:
-            result = query_cache[target_ps_cypher]
         target_ps = set(record['elemId1'] for record in result)
         result = neo4j_connector.run_query(pred_ps_cypher, timeout=timeout)
         pred_ps = set(record['elemId2'] for record in result)
@@ -239,6 +239,6 @@ def provenance_subgraph_jaccard_similarity(pred_cypher: str,
         U = len(target_ps.union(pred_ps))
         psjs = I / U if U > 0 else 0.0
     except Exception as e:
-        print(f'When evaluating PSJS encountered exception: {e}')
+        print("PSJS Exception!")
         return 0.0
     return psjs

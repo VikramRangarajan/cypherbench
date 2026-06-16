@@ -62,7 +62,9 @@ class Neo4jConnector:
         self.database = database
         self.debug = debug
         self.driver = GraphDatabase.driver(f'bolt://{host}:{port}', auth=(username, password),
-                                           max_connection_pool_size=max_connection_pool_size)
+                                           max_connection_pool_size=max_connection_pool_size,
+                                           notifications_min_severity="OFF",
+                                           warn_notification_severity="OFF")
         self.driver.verify_connectivity()
 
     def run_query(self, cypher, timeout=None, convert_func: Literal['data', 'graph'] = 'data', **kwargs):
